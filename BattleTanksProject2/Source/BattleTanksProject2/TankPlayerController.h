@@ -24,5 +24,17 @@ private:
 
 	ATank* GetControlledTank() const;
 	void AimTowardsCrosshair(); //start tank moving barrel so a shot will hit where crosshair intersects
-	
+	bool GetSightRayHitLocation(FVector& HitLocation) const;
+
+	UPROPERTY(EditAnywhere)
+	float CrosshairXLocation = 0.5;
+	UPROPERTY(EditAnywhere)
+	float CrosshairYLocation = 0.33333;
+
+	//deprojecting
+	bool GetWorldDirection(FVector2D ScreenLocation, FVector& WorldDirection) const;
+	bool GetLookVectorHitLocation(FVector WorldDirection, FVector& HitLocation) const;
+
+	UPROPERTY(EditAnywhere)
+	float LineTraceRange = 1000000;
 };

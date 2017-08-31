@@ -6,7 +6,6 @@
 
 void ATankPlayerController::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-	UE_LOG(LogTemp, Warning, TEXT("TickTock"))
 	AimTowardsCrosshair();
 
 }
@@ -33,8 +32,57 @@ ATank* ATankPlayerController::GetControlledTank() const {
 
 void ATankPlayerController::AimTowardsCrosshair() {
 	if (!GetControlledTank()) { return; }
-	//get world location through line tracing through crosshair
-		//if it hits landscape
-			//tell controlled tank to aim at that point
 
+	FVector HitLocation; //OutParameter
+	if (GetSightRayHitLocation(HitLocation)) {  ///this will ray trace and trace
+		GetControlledTank()->AimAt(HitLocation);
+	}
+	
+	
+		
+
+}
+bool ATankPlayerController::GetSightRayHitLocation(FVector& HitLocation) const {
+	int32 ViewportSizeX, ViewportSizeY;
+	GetViewportSize(ViewportSizeX, ViewportSizeY);
+	auto ScreenLocation = FVector2D(ViewportSizeX * CrosshairXLocation, ViewportSizeY * CrosshairYLocation); //viewportsize multiplied by the fraction of the screen that the is located
+	///need to find the location of the dot relative to the actual screen, not just the viewport("deproject")
+	///these are used for deprojection
+
+	
+	FVector WorldDirection;
+	if (GetWorldDirection(ScreenLocation, WorldDirection)) {
+
+		GetLookVectorHitLocation(WorldDirection, HitLocation);
+		UE_LOG(LogTemp, Warning, TEXT("Hit Location: %s"), *HitLocation.ToString())
+	}
+	///line trace along the world direction to catch landscape
+	return true;
+}
+
+bool ATankPlayerController::GetWorldDirection(FVector2D ScreenLocation, FVector& WorldDirection) const {
+	FVector CameraWorldLocation;
+	return DeprojectScreenPositionToWorld(
+		ScreenLocation.X,
+		ScreenLocation.Y,
+		CameraWorldLocation,
+		WorldDirection
+	);
+}
+
+bool ATankPlayerController::GetLookVectorHitLocation(FVector WorldDirection, FVector& HitLocation) const {
+	FHitResult HitResult;
+	auto StartLocation = PlayerCameraManager->GetCameraLocation();
+	auto EndLocation = StartLocation + WorldDirection*LineTraceRange;
+	if (GetWorld()->LineTraceSingleByChannel(
+			HitResult,
+			StartLocation,
+			EndLocation,
+			ECollisionChannel::ECC_Visibility)) {
+		HitLocation = HitResult.Location;
+		return true;
+	}
+	else {
+		return false;
+	}
 }
